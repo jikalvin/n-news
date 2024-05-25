@@ -70,7 +70,7 @@ const routes = [
       {
         exact: 'true',
         path: '/app/moderate',
-        element: lazy(() => import('./components/CreateNews/index'))
+        element: lazy(() => import('./components/Moderation/index'))
         // element: lazy(() => import('./views/forms/FormsElements'))
       },
       {

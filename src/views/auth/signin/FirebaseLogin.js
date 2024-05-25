@@ -4,12 +4,12 @@ import { Row, Col, Button, Alert } from 'react-bootstrap';
 
 import * as Yup from 'yup';
 import { Formik } from 'formik';
-import { signInWithEmailAndPassword } from 'firebase/auth'; // Import Firebase functions
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../../config/firebase';
 import { useNavigate } from 'react-router-dom';
 
 const FirebaseLogin = ({ className, ...rest }) => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const handleLogin = async (values, { setSubmitting, setStatus }) => {
     const { email, password } = values;
@@ -17,7 +17,7 @@ const FirebaseLogin = ({ className, ...rest }) => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       console.log('Login successful!');
-      navigate("/app/overview")
+      navigate("/app/overview");
     } catch (error) {
       setStatus({ submit: error.message });
     } finally {
@@ -29,8 +29,8 @@ const FirebaseLogin = ({ className, ...rest }) => {
     <React.Fragment>
       <Formik
         initialValues={{
-          email: '',
-          password: '',
+          email: 'email@website.com',
+          password: '**********',
         }}
         validationSchema={Yup.object().shape({
           email: Yup.string().email('Must be a valid email').max(255).required('Email is required'),
@@ -38,7 +38,7 @@ const FirebaseLogin = ({ className, ...rest }) => {
         })}
         onSubmit={handleLogin}
       >
-        {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
+        {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values, status }) => (
           <form noValidate onSubmit={handleSubmit} className={className} {...rest}>
             <div className="form-group mb-3">
               <input
@@ -65,9 +65,9 @@ const FirebaseLogin = ({ className, ...rest }) => {
               {touched.password && errors.password && <small className="text-danger form-text">{errors.password}</small>}
             </div>
 
-            {errors.submit && (
+            {status && status.submit && (
               <Col sm={12}>
-                <Alert variant="danger">{errors.submit}</Alert>
+                <Alert variant="danger">{status.submit}</Alert>
               </Col>
             )}
 

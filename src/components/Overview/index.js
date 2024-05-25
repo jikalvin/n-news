@@ -1,7 +1,7 @@
 import { collection, doc, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { db } from '../../config/firebase';
-import { Button, ButtonGroup, Card, Col, Form, Modal, Row } from 'react-bootstrap';
+import { Button, ButtonGroup, Card, Col, Form, Modal, Row, Spinner, Toast, ToastContainer } from 'react-bootstrap';
 
 const Overview = () => {
     const [newsArticles, setNewsArticles] = useState([]);
@@ -9,6 +9,10 @@ const Overview = () => {
     const [error, setError] = useState(null);
     const [editingArticle, setEditingArticle] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [selectedArticleId, setSelectedArticleId] = useState(null);
+    const [showToast, setShowToast] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
 
     const handlePublishToggle = async (articleId, currentState) => {
         try {
@@ -21,20 +25,23 @@ const Overview = () => {
                     article.id === articleId ? { ...article, isCoverArticle: !currentState } : article
                 )
             );
-            console.log('Article published state updated successfully!');
+            setToastMessage('Article publish state updated successfully!');
+            setShowToast(true);
         } catch (err) {
-            console.error('Error updating article published state:', err);
+            console.error('Error updating article publish state:', err);
             setError('Failed to update publish state');
         }
     };
 
-    const handleDelete = async (articleId) => {
+    const handleDelete = async () => {
         try {
-            await deleteDoc(doc(db, 'news', articleId));
+            await deleteDoc(doc(db, 'news', selectedArticleId));
             setNewsArticles((prevArticles) =>
-                prevArticles.filter((article) => article.id !== articleId)
+                prevArticles.filter((article) => article.id !== selectedArticleId)
             );
-            console.log('Article deleted successfully!');
+            setShowDeleteModal(false);
+            setToastMessage('Article deleted successfully!');
+            setShowToast(true);
         } catch (err) {
             console.error('Error deleting article:', err);
             setError('Failed to delete article');
@@ -59,7 +66,8 @@ const Overview = () => {
                 )
             );
             setShowEditModal(false);
-            console.log('Article updated successfully!');
+            setToastMessage('Article updated successfully!');
+            setShowToast(true);
         } catch (err) {
             console.error('Error updating article:', err);
             setError('Failed to update article');
@@ -101,16 +109,16 @@ const Overview = () => {
     return (
         <div className="container mt-5">
             <h1>News Articles</h1>
-            {isLoading && <p>Loading news articles...</p>}
+            {isLoading && <Spinner animation="border" />}
             {error && <p className="text-danger">Error: {error}</p>}
             {!isLoading && newsArticles.length === 0 && <p>No news articles found.</p>}
             {!isLoading && newsArticles.length > 0 && (
                 <Row xs={1} md={2} lg={3} className="g-4">
                     {newsArticles.map((article) => (
                         <Col key={article.id}>
-                            <Card>
-                                <Card.Img variant="top" src={article.coverImage} alt={article.title} style={{ padding: 15 }} />
-                                <Card.Body>
+                            <Card className="h-100">
+                                <Card.Img variant="top" src={article.coverImage} alt={article.title} style={{ height: '200px', objectFit: 'cover' }} />
+                                <Card.Body className="d-flex flex-column">
                                     <Card.Title>{article.title}</Card.Title>
                                     <Card.Text>{article.content.substring(0, 100)}...</Card.Text>
                                     <div className="d-flex justify-content-between mt-auto">
@@ -118,7 +126,10 @@ const Overview = () => {
                                             <Button variant="primary" size="sm" onClick={() => handleEdit(article)}>
                                                 Edit
                                             </Button>
-                                            <Button variant="danger" size="sm" onClick={() => handleDelete(article.id)}>
+                                            <Button variant="danger" size="sm" onClick={() => {
+                                                setSelectedArticleId(article.id);
+                                                setShowDeleteModal(true);
+                                            }}>
                                                 Delete
                                             </Button>
                                         </ButtonGroup>
@@ -181,6 +192,25 @@ const Overview = () => {
                     </Modal.Body>
                 </Modal>
             )}
+            <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Confirm Delete</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>Are you sure you want to delete this article?</Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+                        Cancel
+                    </Button>
+                    <Button variant="danger" onClick={handleDelete}>
+                        Delete
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+            <ToastContainer position="top-end" className="p-3">
+                <Toast onClose={() => setShowToast(false)} show={showToast} delay={3000} autohide>
+                    <Toast.Body>{toastMessage}</Toast.Body>
+                </Toast>
+            </ToastContainer>
         </div>
     );
 };
